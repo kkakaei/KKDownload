@@ -10,6 +10,7 @@
         public $downloadCount = -1;
         public $ip = null;
         public $time = -1;
+        public $expire = null;
         public $path;
         public $downloadName = null;
         public $loaded = false;
@@ -45,6 +46,7 @@
         public function setTime($time)
         {
             $this->time = $time;
+            $this->expire = $time+time();
         }
 
         /**
@@ -97,7 +99,7 @@
                 if ($this->ip != Ip::getIp())
                     throw new Exception("IP is Wrong");
             if ($this->time != -1)
-                if ($this->time < time())
+                if ($this->expire < time())
                     throw new Exception("link expired");
             if ($this->loaded)
             {
@@ -138,7 +140,8 @@
         public function saveDownload()
         {
             $db = Database::getDb();
-            $result = $db->query("INSERT INTO download ( downloadName, path, expire, ip, downloadCount, speedLimit, id ) VALUES ( '{$this->downloadName}','{$this->path}','{$this->time}','{$this->ip}','{$this->downloadCount}','{$this->speedLimit}','{$this->id}');");
+            $expire=$this->time+time();
+            $result = $db->query("INSERT INTO download ( downloadName, path, expire, ip, downloadCount, speedLimit, id ) VALUES ( '{$this->downloadName}','{$this->path}','{$expire}','{$this->ip}','{$this->downloadCount}','{$this->speedLimit}','{$this->id}');");
             if ($result)
                 return $this->id;
             throw new Exception("cannot save Download");
@@ -155,7 +158,7 @@
                 $this->speedLimit = $row["speedLimit"];
                 $this->downloadCount = $row["downloadCount"];
                 $this->ip = $row["ip"];
-                $this->time = $row["expire"];
+                $this->expire = $row["expire"];
                 $this->path = $row["path"];
                 $this->downloadName = $row["downloadName"];
                 $this->loaded = true;
