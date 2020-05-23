@@ -5,16 +5,16 @@
 
     class KKDownload
     {
-        public $id = null;
-        public $speedLimit = -1;
-        public $downloadCount = -1;
-        public $ip = null;
-        public $time = -1;
-        public $expire = null;
-        public $path;
-        public $downloadName = null;
-        public $loaded = false;
-        public $config;
+        private $id = null;
+        private $speedLimit = -1;
+        private $downloadCount = -1;
+        private $ip = null;
+        private $time = -1;
+        private $expire = null;
+        private $path;
+        private $downloadName = null;
+        private $loaded = false;
+        private $config;
 
         /**
          * @param mixed $speedLimit
