@@ -37,6 +37,6 @@ $download->setConfig("VIP");
 ```
 also you can change them using `setters`
 
-`saveDownload()` method will store download data in a SQLite3 database for next usage it will return the download`s id wich help you to load the download with `loadDownload()` methed
+`saveDownload()` method will store download data in a SQLite3 database for next usage it will return the id of download wich help you to load the download with `loadDownload($id)` methed
 
 **if you want use downloadCount you must save download just one time and it automatically do other things**
