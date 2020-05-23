@@ -1,9 +1,9 @@
 # KKDownload
-a library to make download links and add expire time, ip limit, download count limit, speed limit and idden file path
+a library to make download links and add expire time, ip limit, download count limit, speed limit and hide file path
 
 **How To Use**
 
-just downlaod and copy files to your project and include `KKDownload.php`
+just download and copy files to your project and include `KKDownload.php`
 create an object
 
 ```
@@ -37,6 +37,6 @@ $download->setConfig("VIP");
 ```
 also you can change them using `setters`
 
-`saveDownload()` method will store download data in a SQLite3 database for next usage it will return the id of download wich help you to load the download with `loadDownload($id)` methed
+`saveDownload()` method will store download data in a SQLite3 database for next usage it will return the id of download which help you to load the download with `loadDownload($id)` method
 
 **if you want use downloadCount you must save download just one time and it automatically do other things**
