@@ -2,6 +2,13 @@
     require_once "./Parser.php";
     require_once "./Helper.php";
     require_once "./Database.php";
+    require_once "./Exceptions/DownloadCountLimitException.php";
+    require_once "./Exceptions/IpLimitException.php";
+    require_once "./Exceptions/TimeLimitException.php";
+    require_once "./Exceptions/FileISNotReadableException.php";
+    require_once "./Exceptions/FileNotFoundException.php";
+    require_once "./Exceptions/DownloadLoadException.php";
+    require_once "./Exceptions/DownloadSaveException.php";
 
     class KKDownload
     {
@@ -51,9 +58,16 @@
 
         /**
          * @param mixed $path
+         * @throws FileNotFoundException
+         * @throws FileISNotReadableException
          */
         public function setPath($path)
         {
+            if (!file_exists($path))
+                throw new FileNotFoundException("file: ".$path." not found");
+            if (!is_readable($path))
+                throw new FileISNotReadableException("file: ".$path." is not readable");
+
             $this->path = $path;
         }
 
@@ -65,6 +79,11 @@
             $this->downloadName = $downloadName;
         }
 
+        /**
+         * @param $config
+         * @throws FileISNotReadableException
+         * @throws FileNotFoundException
+         */
         public function setConfig($config)
         {
             $temp = Parser::INIParse("./configs.ini");
@@ -72,6 +91,11 @@
             $this->applyConfig();
         }
 
+        /**
+         * KKDownload constructor.
+         * @throws FileISNotReadableException
+         * @throws FileNotFoundException
+         */
         public function __construct()
         {
             $temp = Parser::INIParse("./configs.ini");
@@ -83,24 +107,33 @@
             $this->id = $id;
         }
 
+        /**
+         *
+         */
         private function applyConfig()
         {
-            $this->setIp($this->config->ip);
             $this->setTime($this->config->time);
             $this->setDownloadCount($this->config->downloadCount);
             $this->setSpeedLimit($this->config->speedLimit);
         }
 
+        /**
+         * @throws DownloadCountLimitException
+         * @throws FileISNotReadableException
+         * @throws FileNotFoundException
+         * @throws IpLimitException
+         * @throws TimeLimitException
+         */
         public function startDownload()
         {
             if ($this->downloadCount == 0)
-                throw new Exception("download Count Limit");
+                throw new DownloadCountLimitException();
             if ($this->ip != null)
                 if ($this->ip != Ip::getIp())
-                    throw new Exception("IP is Wrong");
+                    throw new IpLimitException();
             if ($this->time != -1)
                 if ($this->expire < time())
-                    throw new Exception("link expired");
+                    throw new TimeLimitException();
             if ($this->loaded)
             {
                 if ($this->downloadCount > 0)
@@ -137,6 +170,12 @@
             exit();
         }
 
+        /**
+         * @return string|null
+         * @throws DownloadSaveException
+         * @throws FileISNotReadableException
+         * @throws FileNotFoundException
+         */
         public function saveDownload()
         {
             $db = Database::getDb();
@@ -144,9 +183,15 @@
             $result = $db->query("INSERT INTO download ( downloadName, path, expire, ip, downloadCount, speedLimit, id ) VALUES ( '{$this->downloadName}','{$this->path}','{$expire}','{$this->ip}','{$this->downloadCount}','{$this->speedLimit}','{$this->id}');");
             if ($result)
                 return $this->id;
-            throw new Exception("cannot save Download");
+            throw new DownloadSaveException();
         }
 
+        /**
+         * @param $id
+         * @throws DownloadLoadException
+         * @throws FileISNotReadableException
+         * @throws FileNotFoundException
+         */
         public function loadDownload($id)
         {
             $db = Database::getDb();
@@ -163,6 +208,7 @@
                 $this->downloadName = $row["downloadName"];
                 $this->loaded = true;
             } else
-                throw new Exception("cannot load Download");
+                throw new DownloadLoadException();
+
         }
     }
