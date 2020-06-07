@@ -144,15 +144,7 @@
             if ($this->time != -1)
                 if ($this->expire < time())
                     throw new TimeLimitException();
-            if ($this->loaded)
-            {
-                if ($this->downloadCount > 0)
-                {
-                    $this->downloadCount--;
-                    $db = Database::getDb();
-                    $db->query("UPDATE download SET downloadCount='{$this->downloadCount}' WHERE id='{$this->id}';");
-                }
-            }
+
             if ((isset($_SERVER['HTTP_RANGE']) || isset($HTTP_SERVER_VARS['HTTP_RANGE']))&&$this->resume)
             {
                 $ranges_str = (isset($_SERVER['HTTP_RANGE'])) ? $_SERVER['HTTP_RANGE'] : $HTTP_SERVER_VARS['HTTP_RANGE'];
@@ -167,6 +159,15 @@
                 }
             } else
             {
+                if ($this->loaded)
+                {
+                    if ($this->downloadCount > 0)
+                    {
+                        $this->downloadCount--;
+                        $db = Database::getDb();
+                        $db->query("UPDATE download SET downloadCount='{$this->downloadCount}' WHERE id='{$this->id}';");
+                    }
+                }
                 $ranges_arr[0] = 0;
                 $ranges_arr[1] = filesize($this->path) - 1;
             }
