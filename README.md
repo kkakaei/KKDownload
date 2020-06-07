@@ -26,7 +26,7 @@ $download->startDownload();
 it will use default configs in `configs.ini`
 you can write new configs like:
 ```
-config.VIP.speedLimit : 2048 //download speed is limited upto 2MB
+config.VIP.speedLimit : 2048 //download speed is limited upto 2MB PER CONNECTION
 config.VIP.downloadCount : -1 //unlimit download count
 config.VIP.ip : 1 //download only works with uniqe IP
 config.VIP.time : -1 // link will not expire
