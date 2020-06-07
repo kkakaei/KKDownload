@@ -259,6 +259,7 @@
                 $this->downloadCount = $row["downloadCount"];
                 $this->ip = $row["ip"];
                 $this->expire = $row["expire"];
+                $this->time = 1;
                 $this->path = $row["path"];
                 $this->downloadName = $row["downloadName"];
                 $this->resume = $row["resume"];
