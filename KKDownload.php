@@ -17,6 +17,7 @@
         private $downloadCount = -1;
         private $ip = null;
         private $time = -1;
+        private $resume = 1;
         private $expire = null;
         private $path;
         private $downloadName = null;
@@ -53,7 +54,15 @@
         public function setTime($time)
         {
             $this->time = $time;
-            $this->expire = $time+time();
+            $this->expire = $time + time();
+        }
+
+        /**
+         * @param int $resume
+         */
+        public function setResume($resume)
+        {
+            $this->resume = $resume;
         }
 
         /**
@@ -64,9 +73,9 @@
         public function setPath($path)
         {
             if (!file_exists($path))
-                throw new FileNotFoundException("file: ".$path." not found");
+                throw new FileNotFoundException("file: " . $path . " not found");
             if (!is_readable($path))
-                throw new FileISNotReadableException("file: ".$path." is not readable");
+                throw new FileISNotReadableException("file: " . $path . " is not readable");
 
             $this->path = $path;
         }
@@ -115,6 +124,7 @@
             $this->setTime($this->config->time);
             $this->setDownloadCount($this->config->downloadCount);
             $this->setSpeedLimit($this->config->speedLimit);
+            $this->setResume($this->config->resume);
         }
 
         /**
@@ -143,6 +153,51 @@
                     $db->query("UPDATE download SET downloadCount='{$this->downloadCount}' WHERE id='{$this->id}';");
                 }
             }
+            if ((isset($_SERVER['HTTP_RANGE']) || isset($HTTP_SERVER_VARS['HTTP_RANGE']))&&$this->resume)
+            {
+                $ranges_str = (isset($_SERVER['HTTP_RANGE'])) ? $_SERVER['HTTP_RANGE'] : $HTTP_SERVER_VARS['HTTP_RANGE'];
+                $ranges_arr = explode('-', substr($ranges_str, strlen('bytes=')));
+                //Now its time to check the ranges
+                if ((intval($ranges_arr[0]) >= intval($ranges_arr[1]) && $ranges_arr[1] != "" && $ranges_arr[0] != "")
+                    || ($ranges_arr[1] == "" && $ranges_arr[0] == "")
+                )
+                {
+                    $ranges_arr[0] = 0;
+                    $ranges_arr[1] = filesize($this->path) - 1;
+                }
+            } else
+            {
+                $ranges_arr[0] = 0;
+                $ranges_arr[1] = filesize($this->path) - 1;
+            }
+
+            $fileHandler = fopen($this->path, "r");
+            $start = 0;
+            $stop=filesize($this->path) - 1;
+            if ($ranges_arr[0] === "")
+            {
+                $stop = filesize($this->path) - 1;
+                $start = filesize($this->path) - intval($ranges_arr[1]);
+            } elseif ($ranges_arr[1] === "")
+            {
+                $start = intval($ranges_arr[0]);
+                $stop = filesize($this->path) - 1;
+            } else
+            {
+                $stop = intval($ranges_arr[1]);
+                $start = intval($ranges_arr[0]);
+            }
+
+            fseek($fileHandler, $stop, SEEK_SET);
+            $stop = ftell($fileHandler);
+            fseek($fileHandler, $start, SEEK_SET);
+            $start = ftell($fileHandler);
+            $data_len = $stop - $start;
+            if ((isset($_SERVER['HTTP_RANGE']) || isset($HTTP_SERVER_VARS['HTTP_RANGE'])) && $this->resume)
+            {
+                header('HTTP/1.0 206 Partial Content');
+                header('Status: 206 Partial Content');
+            }
             header('Content-Description: File Transfer');
             header('Content-Type: application/octet-stream');
             if ($this->downloadName != null)
@@ -152,22 +207,21 @@
             header('Expires: 0');
             header('Cache-Control: must-revalidate');
             header('Pragma: public');
-            header('Content-Length: ' . filesize($this->path));
-            if ($this->speedLimit != -1)
+            if ($this->resume)
             {
-                $fileHandler = fopen($this->path, "r");
-                while (!feof($fileHandler))
-                {
-                    print fread($fileHandler, round(1024 * $this->speedLimit));
-                    flush();
-                    sleep(1);
-                }
-            } else
-            {
-                readfile($this->path);
+                header('Accept-Ranges: bytes');
+                header("Content-Range: bytes $start-$stop/" . filesize($this->path));
             }
-
-            exit();
+            header("Content-Length: " . ($data_len + 1));
+            $bufsize = abs(round(1024 * $this->speedLimit));
+            while (!(connection_aborted() || connection_status() == 1) && $data_len > 0)
+            {
+                echo fread($fileHandler, $bufsize);
+                $data_len -= $bufsize;
+                flush();
+                if ($this->speedLimit != -1)
+                    sleep(1);
+            }
         }
 
         /**
@@ -179,7 +233,7 @@
         public function saveDownload()
         {
             $db = Database::getDb();
-            $expire=$this->time+time();
+            $expire = $this->time + time();
             $result = $db->query("INSERT INTO download ( downloadName, path, expire, ip, downloadCount, speedLimit, id ) VALUES ( '{$this->downloadName}','{$this->path}','{$expire}','{$this->ip}','{$this->downloadCount}','{$this->speedLimit}','{$this->id}');");
             if ($result)
                 return $this->id;
@@ -209,6 +263,5 @@
                 $this->loaded = true;
             } else
                 throw new DownloadLoadException();
-
         }
     }
