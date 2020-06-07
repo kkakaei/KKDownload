@@ -234,7 +234,7 @@
         {
             $db = Database::getDb();
             $expire = $this->time + time();
-            $result = $db->query("INSERT INTO download ( downloadName, path, expire, ip, downloadCount, speedLimit, id ) VALUES ( '{$this->downloadName}','{$this->path}','{$expire}','{$this->ip}','{$this->downloadCount}','{$this->speedLimit}','{$this->id}');");
+            $result = $db->query("INSERT INTO download ( downloadName, path, expire, ip, downloadCount, speedLimit, id ,resume) VALUES ( '{$this->downloadName}','{$this->path}','{$expire}','{$this->ip}','{$this->downloadCount}','{$this->speedLimit}','{$this->id}','{$this->resume}');");
             if ($result)
                 return $this->id;
             throw new DownloadSaveException();
@@ -260,6 +260,7 @@
                 $this->expire = $row["expire"];
                 $this->path = $row["path"];
                 $this->downloadName = $row["downloadName"];
+                $this->resume = $row["resume"];
                 $this->loaded = true;
             } else
                 throw new DownloadLoadException();
